@@ -233,10 +233,27 @@ speedInputUI.FocusLost:Connect(function()
 end)
 
 function ServerHop()
-    statusTxtUI.Text = "💡 ⚡ Đang đổi server..."
+    statusTxtUI.Text = "💡 ⚡ Đang tìm server ít người..."
     
     local TPS = game:GetService("TeleportService")
-    TPS:Teleport(game.PlaceId)
+    local Http = game:GetService("HttpService")
+    local Api = "https://games.roblox.com/v1/games/"
+    local _place = game.PlaceId
+    local _servers = Api.._place.."/servers/Public?sortOrder=Asc&limit=100"
+    
+    local function ListServers(cursor)
+        local Raw = game:HttpGet(_servers .. ((cursor and "&cursor="..cursor) or ""))
+        return Http:JSONDecode(Raw)
+    end
+    
+    local Server, Next
+    repeat
+        local Servers = ListServers(Next)
+        Server = Servers.data[1]
+        Next = Servers.nextPageCursor
+    until Server
+    
+    TPS:TeleportToPlaceInstance(_place, Server.id, game.Players.LocalPlayer)
 end
 
 hopBtnUI.MouseButton1Click:Connect(ServerHop)
@@ -385,6 +402,21 @@ game:GetService("RunService").Stepped:Connect(function()
             end
         end
     end
+end)
+
+local function RainbowText(textLabel)
+    local tweenService = game:GetService("TweenService")
+    while true do
+        for i = 0, 1, 0.05 do
+            local color = Color3.fromHSV(i, 1, 1)
+            textLabel.TextColor3 = color
+            task.wait(0.1)
+        end
+    end
+end
+
+task.spawn(function()
+    RainbowText(titleLabel)
 end)
 
 print("✅ NOTZ HUB PREMIUM")
